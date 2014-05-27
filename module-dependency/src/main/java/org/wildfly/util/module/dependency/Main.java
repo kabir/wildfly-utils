@@ -1,6 +1,7 @@
 package org.wildfly.util.module.dependency;
 
 import java.io.File;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -16,7 +17,8 @@ import org.jboss.modules.ModuleIdentifier;
 public class Main
 {
     public static void main( String[] args ) throws Exception {
-        File root = new File("/Users/kabir/sourcecontrol/wildfly/git/wildfly/build/target/wildfly-8.0.1.Final-SNAPSHOT/modules/system/layers/base/");
+        String modulesDir = System.getProperty("jboss.as.modules.dir", "/Users/kabir/sourcecontrol/wildfly/git/wildfly/build/target/wildfly-9.0.0.Alpha1-SNAPSHOT/modules/system/layers/base/");
+        File root = new File(modulesDir);
 
         ModuleSpecFinder finder = ModuleSpecFinder.Factory.create(root);
         ModuleGraph graph = new ModuleGraph(finder);
@@ -40,24 +42,24 @@ public class Main
         	}
         }
 
-        System.out.println("\n====== Subsystems not reachable from " + sourceId + "\n");
+        System.out.println("\n\n****** Subsystems not reachable from " + sourceId + "\n");
         for (ModuleIdentifier id : nonReachable) {
         	System.out.println(id);
         }
 
-        System.out.println("\n====== Subsystems reachable from " + sourceId + "\n");
+        System.out.println("\n\n****** Subsystems reachable from " + sourceId + "\n");
         for (Map.Entry<ModuleIdentifier, List<ModuleIdentifier>> entry : reachable.entrySet()) {
         	System.out.println("* " + entry.getKey() + "\n" + format(entry.getValue(), 5));
         }
 
 
-        final Set<ModuleIdentifier> directCoreSubsystems = new TreeSet<>(Util.MODULE_ID_COMPARATOR);
-        DependencyPathDFS nonSubsystemCoreModulesStrict = new DependencyPathDFS(graph, sourceId, new EndSearchCondition() {
+        final Map<ModuleIdentifier, ModuleIdentifier> directCoreSubsystemsWithParents = new TreeMap<>(Util.MODULE_ID_COMPARATOR);
+        final DependencyPathDFS nonSubsystemCoreModulesStrict = new DependencyPathDFS(graph, sourceId, new EndSearchCondition() {
             @Override
             public boolean endSearch(ModuleIdentifier id, ModuleDependency dep) {
                 ModuleIdentifier depId = dep.getToId();
                 if (subsystems.getNames().contains(depId)){
-                    directCoreSubsystems.add(depId);
+                    directCoreSubsystemsWithParents.put(depId, id);
                     return true;
                 }
                 return false;
@@ -66,13 +68,17 @@ public class Main
 
         final TreeSet<ModuleIdentifier> nonSubsystemCoreModulesStrictTree = new TreeSet<ModuleIdentifier>(Util.MODULE_ID_COMPARATOR);
         nonSubsystemCoreModulesStrictTree.addAll(nonSubsystemCoreModulesStrict.getAllModules());
-        System.out.println("\n====== All modules reachable from server but not via subsystems (strict)" + nonSubsystemCoreModulesStrictTree.size());
+        System.out.println("\n\n****** All modules reachable from server but not via subsystems (strict)" + nonSubsystemCoreModulesStrictTree.size());
         for (ModuleIdentifier id : nonSubsystemCoreModulesStrictTree){
             System.out.println(id);
         }
-        System.out.println("\n====== Subsystems directly reachable from server " + directCoreSubsystems.size());
-        for (ModuleIdentifier id : directCoreSubsystems){
-            System.out.println(id);
+        System.out.println("\n\n****** Subsystems reachable from server (not via other subsystem)" + directCoreSubsystemsWithParents.size());
+        for (Map.Entry<ModuleIdentifier, ModuleIdentifier> entry : directCoreSubsystemsWithParents.entrySet()){
+            ModuleIdentifier parent = entry.getValue();
+            List<ModuleIdentifier> pathToParent = nonSubsystemCoreModulesStrict.simplePathTo(parent);
+            List<ModuleIdentifier> path = new ArrayList<>(pathToParent);
+            path.add(entry.getKey());
+            System.out.println(entry.getKey() + " " + path);
         }
 
         Map<ModuleIdentifier, Set<ModuleIdentifier>> subsystemsBySubsystems = new TreeMap<>(Util.MODULE_ID_COMPARATOR);
@@ -96,11 +102,18 @@ public class Main
             subsystemsBySubsystems.put(subsystemId, modules);
         }
 
-        System.out.println("====== All modules (apart from stuff reachable from server) reachable from a subsystem, stopping at a subsystem");
+        System.out.println("\n\n****** All modules (apart from stuff reachable from server) reachable from a subsystem, stopping at a subsystem");
         for (Map.Entry<ModuleIdentifier, Set<ModuleIdentifier>> entry : subsystemsBySubsystems.entrySet()) {
-            System.out.println("====== " + entry.getKey());
+            System.out.println("------ " + entry.getKey());
             for (ModuleIdentifier module : entry.getValue()){
-                System.out.println(module);
+                if (subsystems.getNames().contains(module)) {
+                    System.out.println(module + " *");
+                }
+            }
+            for (ModuleIdentifier module : entry.getValue()){
+                if (!subsystems.getNames().contains(module)) {
+                    System.out.println(module);
+                }
             }
         }
 
