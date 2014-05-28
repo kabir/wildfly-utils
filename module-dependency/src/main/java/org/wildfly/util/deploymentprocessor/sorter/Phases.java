@@ -29,10 +29,8 @@ import java.util.Map;
 import java.util.Set;
 
 public class Phases {
-
-
     private Map<String, Phase> phases = new LinkedHashMap<>();
-    private static Set<String> allNames = new HashSet<>();
+    private Set<String> allNames = new HashSet<>();
 
     public Phases(Phase...phases){
         for (Phase phase : phases) {
@@ -40,9 +38,15 @@ public class Phases {
         }
     }
 
-
     public void addDup(String phaseName, DeploymentUnitProcessor dup, String...dependencies) {
+        assert phaseName != null : "Null phaseName";
+        assert dup != null : "Null dup";
+        assert dup.getName() != null : "Dup has a null name";
         Phase phase = phases.get(phaseName);
+        assert phase != null : "No phase called " + phaseName;
+        if (allNames.contains(dup.getName())) {
+            throw new IllegalStateException("Already contains a dup called " + dup);
+        }
         phase.addDup(dup, dependencies);
     }
 

@@ -41,16 +41,9 @@ public class Phase {
 
     Phase(String phaseName, Phase previous) {
         this.phaseName = phaseName;
-        if (previous == null){
-            previous = new Phase();
-        }
         this.previous = previous;
     }
 
-    private Phase(){
-        this.phaseName = "<NULL>";
-        this.previous = null;
-    }
 
     String getPhaseName() {
         return phaseName;
@@ -58,6 +51,16 @@ public class Phase {
 
     Set<String> getAllDupNames() {
         return allObjects.keySet();
+    }
+
+    boolean contains(String dupName) {
+        if (allObjects.containsKey(dupName)){
+            return true;
+        }
+        if (previous != null) {
+            return previous.contains(dupName);
+        }
+        return false;
     }
 
     void addDup(DeploymentUnitProcessor dup, String...dependencies) {
@@ -73,10 +76,11 @@ public class Phase {
     }
 
     private class Sorter {
-        private Set<String> marked = new HashSet<>();
-        private Set<String> onStack = new HashSet<>();
-        private Stack<DeploymentUnitProcessor> reversePostOrder = new Stack<DeploymentUnitProcessor>();
-        private List<DeploymentUnitProcessor> sort() {
+        private final Set<String> marked = new HashSet<>();
+        private final Set<String> onStack = new HashSet<>();
+        private final Stack<DeploymentUnitProcessor> reversePostOrder = new Stack<DeploymentUnitProcessor>();
+
+        private final List<DeploymentUnitProcessor> sort() {
             for (String name : allObjects.keySet()) {
                 if (!marked.contains(name)) {
                     sort(name);
@@ -90,6 +94,12 @@ public class Phase {
             marked.add(name);
             for (String dependency : dependencies.get(name)){
                 if (!marked.contains(dependency)) {
+                    if (!allObjects.containsKey(dependency)) {
+                        if (previous != null && previous.contains(dependency)){
+                            continue;
+                        }
+                        throw new IllegalStateException("No dependency called " + dependency + "; referenced from " + name + " in phase " + phaseName);
+                    }
                     sort(dependency);
                 } else if (onStack.contains(dependency)) {
                     throw new IllegalStateException("Cycle"); //TODO explain what!
