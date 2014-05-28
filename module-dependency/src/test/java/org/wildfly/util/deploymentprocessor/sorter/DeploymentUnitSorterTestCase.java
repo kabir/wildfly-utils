@@ -22,6 +22,7 @@
 
 package org.wildfly.util.deploymentprocessor.sorter;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
@@ -102,7 +103,6 @@ public class DeploymentUnitSorterTestCase {
         Phases phases = new Phases(PHASE_1, PHASE_2, PHASE_3);
 
         DeploymentUnitProcessor one_one = new DeploymentUnitProcessor("one-one");
-        System.out.println(one_one);
         DeploymentUnitProcessor one_two = new DeploymentUnitProcessor("one-two");
         DeploymentUnitProcessor one_three = new DeploymentUnitProcessor("one-three");
         DeploymentUnitProcessor one_four = new DeploymentUnitProcessor("one-four");
@@ -134,6 +134,66 @@ public class DeploymentUnitSorterTestCase {
         Assert.assertEquals(list(one_one, one_two, one_three, one_four), sorted.get(PHASE_1));
         Assert.assertEquals(list(two_one, two_two, two_three, two_four), sorted.get(PHASE_2));
         Assert.assertEquals(list(three_one, three_two, three_three, three_four), sorted.get(PHASE_3));
+    }
+
+
+    @Test
+    public void testStress() {
+        System.out.println("=== Warmup ");
+        for (int i = 0 ; i < 10 ; i++) {
+            executeStressTest(50, 50, 50, 50);
+        }
+
+        executeStressTest(50, 500, 50, 50);
+
+    }
+
+    private void executeStressTest(final int numPhases, final int dupsPerPhase, final int otherPhaseDeps, final int currentPhaseDeps){
+        System.out.println("--phases=" + numPhases + "; dups/phase=" + dupsPerPhase + "; otherPhaseDeps=" + otherPhaseDeps + "; deps/current=" + currentPhaseDeps);
+        long start = System.currentTimeMillis();
+
+        List<Phase> phasesList = new ArrayList<>();
+        for (int p = 0 ; p < numPhases ; p++) {
+            Phase previous = p == 0 ? null : phasesList.get(p - 1);
+            Phase phase = new Phase("Phase" + p, previous);
+            phasesList.add(phase);
+
+
+            for (int d = 0 ; d < dupsPerPhase ; d++) {
+                DeploymentUnitProcessor processor = new DeploymentUnitProcessor(getName(p, d));
+
+                List<String> deps = new ArrayList<>();
+                //current deps
+                int max = d < currentPhaseDeps ? 0 : d - currentPhaseDeps;
+                for (int i = d - 1 ; i >= max ; i--) {
+                    deps.add(getName(p, i));
+                }
+                //other phase deps
+                int total = 0;
+                for (int i = 0 ; i < p && total <= otherPhaseDeps ; i++, total++) {
+                    for (int j = 0 ; j < dupsPerPhase && total <= otherPhaseDeps ; j++, total++) {
+                        deps.add(getName(i, j));
+                    }
+                }
+
+                phase.addDup(processor, deps.toArray(new String[deps.size()]));
+            }
+        }
+
+
+        Phases phases = new Phases(phasesList.toArray(new Phase[phasesList.size()]));
+
+        long presort = System.currentTimeMillis();
+        Map<Phase, List<DeploymentUnitProcessor>>  sorted = phases.sort();
+        long end = System.currentTimeMillis();
+
+        System.out.println("\tSetup took: " + String.valueOf(presort - start) + "ms");
+        System.out.println("\tSorting took: " + String.valueOf(end - presort) + "ms");
+    }
+
+
+    private String getName(int phase, int dup){
+        return phase + "-" + dup;
     }
 
     private List<DeploymentUnitProcessor> list(DeploymentUnitProcessor...processors) {
