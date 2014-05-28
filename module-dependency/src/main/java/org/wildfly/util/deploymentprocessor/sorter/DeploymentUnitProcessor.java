@@ -20,44 +20,36 @@
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
 
-package org.wildfly.util.module.dependency;
+package org.wildfly.util.deploymentprocessor.sorter;
 
-import java.io.Closeable;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.List;
-import java.util.ListIterator;
-import java.util.Stack;
+public class DeploymentUnitProcessor {
+    private final String name;
 
-import org.jboss.modules.ModuleIdentifier;
+    public DeploymentUnitProcessor(String name) {
+        this.name = name;
+    }
 
-public class Util {
+    public String getName() {
+        return name;
+    }
 
-	public static Comparator<ModuleIdentifier> MODULE_ID_COMPARATOR = new Comparator<ModuleIdentifier>() {
-		@Override
-		public int compare(ModuleIdentifier o1, ModuleIdentifier o2) {
-			return o1.getName().compareToIgnoreCase(o2.getName());
-		}
-	};
+    @Override
+    public String toString() {
+        return "dup:" + name;
+    }
+
+    @Override
+    public int hashCode() {
+        return name.hashCode();
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (obj == null || obj.getClass() != DeploymentUnitProcessor.class) {
+            return false;
+        }
+        return name.equals(((DeploymentUnitProcessor)obj).name);
+    }
 
 
-	static void safeClose(Closeable c) {
-		try {
-			c.close();
-		} catch (Exception e){
-		}
-	}
-
-	public static <T> List<T> stackToReverseList(Stack<T> stack){
-		if (stack.size() == 0) {
-			return Collections.emptyList();
-		}
-		List<T> list = new ArrayList<>();
-		for (ListIterator<T> it = stack.listIterator(stack.size()) ; it.hasPrevious() ; ) {
-			list.add(it.previous());
-		}
-
-		return list;
-	}
 }

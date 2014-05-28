@@ -20,44 +20,37 @@
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
 
-package org.wildfly.util.module.dependency;
+package org.wildfly.util.deploymentprocessor.sorter;
 
-import java.io.Closeable;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Comparator;
+import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.ListIterator;
-import java.util.Stack;
+import java.util.Map;
+import java.util.Set;
 
-import org.jboss.modules.ModuleIdentifier;
-
-public class Util {
-
-	public static Comparator<ModuleIdentifier> MODULE_ID_COMPARATOR = new Comparator<ModuleIdentifier>() {
-		@Override
-		public int compare(ModuleIdentifier o1, ModuleIdentifier o2) {
-			return o1.getName().compareToIgnoreCase(o2.getName());
-		}
-	};
+public class Phases {
 
 
-	static void safeClose(Closeable c) {
-		try {
-			c.close();
-		} catch (Exception e){
-		}
-	}
+    private Map<String, Phase> phases = new LinkedHashMap<>();
+    private static Set<String> allNames = new HashSet<>();
 
-	public static <T> List<T> stackToReverseList(Stack<T> stack){
-		if (stack.size() == 0) {
-			return Collections.emptyList();
-		}
-		List<T> list = new ArrayList<>();
-		for (ListIterator<T> it = stack.listIterator(stack.size()) ; it.hasPrevious() ; ) {
-			list.add(it.previous());
-		}
+    public Phases(Phase...phases){
+        for (Phase phase : phases) {
+            this.phases.put(phase.getPhaseName(), phase);
+        }
+    }
 
-		return list;
-	}
+
+    public void addDup(String phaseName, DeploymentUnitProcessor dup, String...dependencies) {
+        Phase phase = phases.get(phaseName);
+        phase.addDup(dup, dependencies);
+    }
+
+    public Map<Phase, List<DeploymentUnitProcessor>> sort() {
+        Map<Phase, List<DeploymentUnitProcessor>> sorted = new LinkedHashMap<Phase, List<DeploymentUnitProcessor>>();
+        for (Phase phase : phases.values()) {
+            sorted.put(phase, phase.sort());
+        }
+        return sorted;
+    }
 }
