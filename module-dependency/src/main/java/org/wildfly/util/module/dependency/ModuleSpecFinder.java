@@ -22,12 +22,14 @@
 
 package org.wildfly.util.module.dependency;
 
+import static org.wildfly.util.module.dependency.Util.MODULE_ID_COMPARATOR;
+
 import java.io.File;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.Stack;
+import java.util.TreeMap;
 
 import org.jboss.modules.ConcreteModuleSpec;
 import org.jboss.modules.DependencySpec;
@@ -48,7 +50,7 @@ public interface ModuleSpecFinder {
 
     Set<ModuleDependency> getModuleDependencies(ModuleSpec moduleSpec) throws ModuleLoadException;
 
-    static class Factory {
+    class Factory {
     	private static final String MODULE_XML = "module.xml";
 
     	public static ModuleSpecFinder create(final File root) throws Exception {
@@ -84,7 +86,7 @@ public interface ModuleSpecFinder {
 						return this.modules;
 					}
 
-					this.modules = new HashMap<ModuleIdentifier, Set<ModuleDependency>>();
+					this.modules = new TreeMap<>(MODULE_ID_COMPARATOR);
 					addModules(root, modules);
 					return modules;
 				}
@@ -97,7 +99,7 @@ public interface ModuleSpecFinder {
 						for (DependencySpec dep : ((ConcreteModuleSpec)moduleSpec).getDependencies()){
 							if (dep instanceof ModuleDependencySpec){
 								ModuleDependencySpec depSpec = (ModuleDependencySpec)dep;
-								deps.add(new ModuleDependency(((ConcreteModuleSpec)moduleSpec).getModuleIdentifier(), depSpec.getIdentifier(), depSpec.isOptional()));
+								deps.add(new ModuleDependency(moduleSpec.getModuleIdentifier(), depSpec.getIdentifier(), depSpec.isOptional()));
 							}
 						}
 					}

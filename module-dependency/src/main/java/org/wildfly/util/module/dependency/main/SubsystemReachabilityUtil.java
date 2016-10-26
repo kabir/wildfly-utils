@@ -20,7 +20,7 @@
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
 
-import java.io.File;
+package org.wildfly.util.module.dependency.main;import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
