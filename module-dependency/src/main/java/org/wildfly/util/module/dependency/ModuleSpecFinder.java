@@ -40,6 +40,7 @@ import org.jboss.modules.ModuleLoader;
 import org.jboss.modules.ModuleSpec;
 
 public interface ModuleSpecFinder {
+	ModuleLoader getModuleLoader();
 
 	Map<ModuleIdentifier, Set<ModuleDependency>> findAllModules() throws ModuleLoadException;
 
@@ -62,6 +63,11 @@ public interface ModuleSpecFinder {
             return new ModuleSpecFinder() {
 
             	Map<ModuleIdentifier, Set<ModuleDependency>> modules;
+
+				@Override
+				public ModuleLoader getModuleLoader() {
+					return moduleLoader;
+				}
 
 				@Override
 				public ModuleSpec findModule(ModuleIdentifier moduleId) throws ModuleLoadException {
@@ -135,7 +141,6 @@ public interface ModuleSpecFinder {
 			    	}
 			    	return ModuleIdentifier.create(sb.toString(), slot);
 			    }
-
             };
         }
     }

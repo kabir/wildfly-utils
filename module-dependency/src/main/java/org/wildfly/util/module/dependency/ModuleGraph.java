@@ -35,7 +35,7 @@ import org.jboss.modules.ModuleLoadException;
 public class ModuleGraph {
     private Map<ModuleIdentifier, Set<ModuleDependency>> modules;
 
-    ModuleGraph(ModuleSpecFinder finder) throws ModuleLoadException {
+    public ModuleGraph(ModuleSpecFinder finder) throws ModuleLoadException {
         this.modules = new HashMap<>(finder.findAllModules());
         //System.out.println(modules);
     }

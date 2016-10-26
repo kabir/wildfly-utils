@@ -41,7 +41,7 @@ public class Subsystems {
 		this.subsystemNames = subsystemNames;
 	}
 
-	static Subsystems create() throws IOException, URISyntaxException {
+	public static Subsystems create() throws IOException, URISyntaxException {
 		Set<ModuleIdentifier> subsystemNames = new TreeSet<>(Util.MODULE_ID_COMPARATOR);
 		final URL url = Subsystems.class.getResource("subsystems.txt");
 		final File file = new File(url.toURI());
@@ -61,7 +61,7 @@ public class Subsystems {
 		return new Subsystems(subsystemNames);
 	}
 
-	Set<ModuleIdentifier> getNames() {
+	public Set<ModuleIdentifier> getNames() {
 		return subsystemNames;
 	}
 }

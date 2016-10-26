@@ -41,11 +41,11 @@ public class DependencyPathDFS {
     private final EndSearchCondition endSearchCondition;
 
 
-    DependencyPathDFS(ModuleGraph graph, ModuleIdentifier root) {
+    public DependencyPathDFS(ModuleGraph graph, ModuleIdentifier root) {
         this(graph, root, EndSearchCondition.NO_OP);
     }
 
-	DependencyPathDFS(ModuleGraph graph, ModuleIdentifier root, EndSearchCondition endSearchCondition) {
+	public DependencyPathDFS(ModuleGraph graph, ModuleIdentifier root, EndSearchCondition endSearchCondition) {
 		this.root = root;
 		this.endSearchCondition = endSearchCondition;
 		dfs(graph, root);
@@ -73,11 +73,11 @@ public class DependencyPathDFS {
 		return marked.contains(id);
 	}
 
-	Set<ModuleIdentifier> getAllModules(){
+	public Set<ModuleIdentifier> getAllModules(){
 		return Collections.unmodifiableSet(marked);
 	}
 
-	List<ModuleIdentifier> simplePathTo(ModuleIdentifier id){
+	public List<ModuleIdentifier> simplePathTo(ModuleIdentifier id){
 		if (!marked.contains(id)){
 			return Collections.emptyList();
 		}
