@@ -1,6 +1,6 @@
 /*
  * JBoss, Home of Professional Open Source.
- * Copyright 2011, Red Hat, Inc., and individual contributors
+ * Copyright 2016, Red Hat, Inc., and individual contributors
  * as indicated by the @author tags. See the copyright.txt file in the
  * distribution for a full listing of individual contributors.
  *
@@ -22,18 +22,20 @@
 
 package org.wildfly.util.module.dependency;
 
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileReader;
-import java.io.IOException;
-import java.net.URISyntaxException;
-import java.net.URL;
+import java.util.ServiceLoader;
 import java.util.Set;
 import java.util.TreeSet;
 
+import org.jboss.modules.Module;
+import org.jboss.modules.ModuleClassLoader;
 import org.jboss.modules.ModuleIdentifier;
+import org.jboss.modules.ModuleLoadException;
+import org.jboss.modules.ModuleLoader;
 
 public class Subsystems {
+
+	private static final String CONTROLLER_MODULE_NAME = "org.jboss.as.controller:main";
+    private static final String EXTENSION_CLASS_NAME = "org.jboss.as.controller.Extension";
 
 	private final Set<ModuleIdentifier> subsystemNames;
 
@@ -41,23 +43,29 @@ public class Subsystems {
 		this.subsystemNames = subsystemNames;
 	}
 
-	public static Subsystems create() throws IOException, URISyntaxException {
+	public static Subsystems create(ModuleSpecFinder finder) throws ModuleLoadException, ClassNotFoundException {
 		Set<ModuleIdentifier> subsystemNames = new TreeSet<>(Util.MODULE_ID_COMPARATOR);
-		final URL url = Subsystems.class.getResource("subsystems.txt");
-		final File file = new File(url.toURI());
-		final BufferedReader reader = new BufferedReader(new FileReader(file));
-		try {
-			String line = reader.readLine();
-			while (line != null) {
-				line = line.trim();
-				if (line.length() > 0 && line.charAt(0) != '#'){
-					subsystemNames.add(ModuleIdentifier.create(line));
-				}
-				line = reader.readLine();
-			}
-		} finally {
-			Util.safeClose(reader);
-		}
+
+		final ModuleLoader moduleLoader = finder.getModuleLoader();
+		final Module controllerModule = moduleLoader.loadModule(ModuleIdentifier.fromString(CONTROLLER_MODULE_NAME));
+        final Class<?> extensionClass = controllerModule.getClassLoader().loadClass(EXTENSION_CLASS_NAME);
+
+        for (ModuleIdentifier moduleId : finder.findAllModules().keySet()) {
+            final Module module = moduleLoader.loadModule(moduleId);
+            ServiceLoader<?> sl = module.loadService(extensionClass);
+            for (Object extension : sl) {
+                //Make sure that we don't report imported services, i.e. check that the defining module of the extension
+                //is the one we are checking
+                ModuleClassLoader extensionCl = (ModuleClassLoader)extension.getClass().getClassLoader();
+                ModuleIdentifier extensionId = extensionCl.getModule().getIdentifier();
+                if (extensionId.equals(moduleId)) {
+                    subsystemNames.add(moduleId);
+                    break;
+                }
+            }
+        }
+
+
 		return new Subsystems(subsystemNames);
 	}
 

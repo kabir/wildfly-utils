@@ -44,13 +44,13 @@ import org.wildfly.util.module.dependency.Util;
 public class SubsystemReachabilityUtil
 {
     public static void main( String[] args ) throws Exception {
-        String modulesDir = System.getProperty("jboss.as.modules.dir", "/Users/kabir/sourcecontrol/wildfly/git/wildfly-core/build/target/wildfly-core-3.0.0.Alpha10-SNAPSHOT/modules/system/layers/base/");
+        String modulesDir = System.getProperty("jboss.as.modules.dir", "/Users/kabir/sourcecontrol/wildfly/git/wildfly/build/target/wildfly-11.0.0.Alpha1-SNAPSHOT/modules/system/layers/base/");
         File root = new File(modulesDir);
 
         ModuleSpecFinder finder = ModuleSpecFinder.Factory.create(root);
         ModuleGraph graph = new ModuleGraph(finder);
 
-        Subsystems subsystems = Subsystems.create();
+        Subsystems subsystems = Subsystems.create(finder);
         subsystemsFrom(graph, subsystems, "org.jboss.as.server");
     }
 
