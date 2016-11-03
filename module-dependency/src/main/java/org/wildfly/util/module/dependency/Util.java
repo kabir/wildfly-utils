@@ -37,7 +37,11 @@ public class Util {
 	public static Comparator<ModuleIdentifier> MODULE_ID_COMPARATOR = new Comparator<ModuleIdentifier>() {
 		@Override
 		public int compare(ModuleIdentifier o1, ModuleIdentifier o2) {
-			return o1.getName().compareToIgnoreCase(o2.getName());
+			int compare = o1.getName().compareToIgnoreCase(o2.getName());
+			if (compare != 0) {
+				return compare;
+			}
+			return o1.getSlot().compareToIgnoreCase(o2.getSlot());
 		}
 	};
 

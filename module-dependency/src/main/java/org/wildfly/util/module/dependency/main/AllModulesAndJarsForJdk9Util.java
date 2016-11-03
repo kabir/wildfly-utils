@@ -77,7 +77,8 @@ public class AllModulesAndJarsForJdk9Util {
         final Map<ModuleIdentifier, String[]> filesForModule = new LinkedHashMap<>();
         final Map<ModuleIdentifier, SubsystemInfo[]> subsystemsForModule = new LinkedHashMap<>();
 
-        getSubsystemsForModule(graph, subsystems, ModuleIdentifier.fromString("org.jberet.jberet-core:main"));
+        //A simple one with few dependencies as a sanity check
+        //getSubsystemsForModule(graph, subsystems, ModuleIdentifier.fromString("org.jberet.jberet-core:main"));
 
         for (ModuleIdentifier id : finder.findAllModules().keySet()) {
             if (id.toString().startsWith("javax.")) {
@@ -252,7 +253,7 @@ public class AllModulesAndJarsForJdk9Util {
         public boolean endSearch(ModuleIdentifier id, ModuleDependency dep) {
             ModuleIdentifier useId = id(dep);
             if (IGNORE.contains(useId)) {
-                //Don't pull in services reachable form server or host-controller modules
+                //Don't pull in services reachable from the ignored modules
                 return true;
             }
 
